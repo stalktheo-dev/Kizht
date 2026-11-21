@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KIZ 🎄 - Joue & Gagne</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;font-family:Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:linear-gradient(180deg,#0a1a2e 0%,#0f0f1a 40%,#1a0f0f 100%);color:white;min-height:100vh;user-select:none;overflow-x:hidden}
+.top{padding:14px 15px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg,#8b0000,#0a5c2e,#8b0000);position:sticky;top:0;z-index:20;border-bottom:3px solid #FFD700}
+.logo{font-size:26px;font-weight:900;color:#FFD700}
+.balance{background:#FFD700;color:#8b0000;padding:8px 14px;border-radius:20px;font-weight:900;font-size:15px}
+.container{padding:16px;max-width:520px;margin:0 auto;padding-bottom:40px;position:relative;z-index:2}
+.card{background:linear-gradient(135deg,#1e1e35,#2a1a2e);padding:18px;border-radius:18px;margin-bottom:14px;border:2px solid #2a2a45}
+.card-christmas{background:linear-gradient(135deg,#0a5c2e,#8b0000);border:2px solid #FFD700}
+input,select{width:100%;padding:14px;margin:7px 0;border-radius:11px;border:none;background:#0e2a4a;color:white;font-size:16px;outline:none}
+.btn{width:100%;padding:15px;border:none;border-radius:13px;font-weight:900;font-size:16px;cursor:pointer;margin-top:10px}
+.btn:active{transform:scale(0.97)}
+.btn-yellow{background:linear-gradient(180deg,#FFE55C,#FFD700);color:#8b0000}
+.btn-purple{background:linear-gradient(180deg,#9d4edd,#7b2fff);color:white}
+.btn-green{background:linear-gradient(180deg,#00e676,#00c853);color:white}
+.btn-blue{background:#00bfff;color:#000}
+.btn-outline{background:transparent;color:#FFD700;border:2px solid #FFD700}
+.btn-christmas{background:linear-gradient(90deg,#d50000,#00c853);color:white}
+.btn-speed{background:linear-gradient(90deg,#ff6d00,#ffab00);color:black}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.game-card{background:linear-gradient(135deg,#1e1e35,#2a1a2e);padding:18px;border-radius:18px;text-align:center;cursor:pointer;border:2px solid #2a2a45}
+.small{font-size:13px;color:#aaa;text-align:center;margin-top:8px;line-height:1.4}
+.option{width:100%;padding:14px;margin:6px 0;background:#2a2a45;border:2px solid #333;border-radius:11px;color:white;text-align:left;cursor:pointer;font-size:16px}
+.option.correct{background:#00c853;border-color:#00c853}.option.wrong{background:#d50000;border-color:#d50000}
+.hidden{display:none}
+.room-card{background:#2a2a45;padding:13px;border-radius:11px;margin:8px 0;display:flex;justify-content:space-between;align-items:center}
+.player-chip{background:#333;padding:6px 11px;border-radius:20px;font-size:13px;margin:3px;display:inline-block}
+.badge{background:#FFD700;color:#8b0000;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:900}
+.badge-green{background:#00e676;color:black;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:900}
+.tab-btn{flex:1;padding:12px;border:none;border-radius:11px;font-weight:900;cursor:pointer;background:#2a2a45;color:white;font-size:13px}
+.tab-btn.active{background:#FFD700;color:#8b0000}
+.timer-bar{height:8px;background:#333;border-radius:10px;overflow:hidden;margin:10px 0}
+.timer-fill{height:100%;background:#FFD700;transition:width 0.1s}
+.progress{height:6px;background:#333;border-radius:10px;overflow:hidden}
+.progress-fill{height:100%;background:#00e676}
+.topup-section-title{font-size:20px;font-weight:900;margin:18px 0 6px 0}
+.topup-section-title span{color:#FFA500;margin-right:8px}
+.topup-section-title b{color:#00bfff}
+.topup-label{font-weight:700;margin:10px 0 4px 0;font-size:15px}
+.topup-opt{padding:13px;background:#0e2a4a;border-radius:11px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;border:2px solid transparent}
+.topup-opt.selected{border-color:#00bfff;background:#143a66}
+.topup-opt.best{border-color:#00e676}
+.pay-info-box{background:#0e2a4a;border-radius:12px;padding:16px;margin:10px 0}
+.history-card{background:#0e2a4a;border-radius:12px;padding:16px;margin:10px 0}
+.status-pending{color:#FFD700;font-weight:900}.status-approved{color:#00e676;font-weight:900}.status-rejected{color:#ff5252;font-weight:900}
+.snowflake{position:fixed;top:-20px;color:white;font-size:18px;opacity:0.8;pointer-events:none;z-index:1;animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+.promo-banner{background:linear-gradient(90deg,#d50000,#FFD700,#00c853);color:black;padding:10px;border-radius:12px;text-align:center;font-weight:900;font-size:14px;margin-bottom:14px}
+.chat-box{background:#0e2a4a;border-radius:12px;padding:10px;max-height:180px;overflow-y:auto;margin-top:10px}
+.chat-msg{padding:6px 8px;margin:4px 0;background:#1a3a5a;border-radius:10px;font-size:14px;text-align:left}
+.chat-msg b{color:#FFD700}
+.notif{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#00c853;color:white;padding:14px 18px;border-radius:14px;font-weight:900;z-index:100;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;width:90%;max-width:400px}
+.receipt-preview{width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:8px;border:2px solid #00bfff}
+</style>
+</head>
+<body>
+<div id="snowContainer"></div>
+<div id="notifBox"></div>
+<div class="top"><div class="logo">🎅 KIZ 🇭🇹</div><div id="balanceBadge" class="balance hidden">🪙 <span id="balanceVal">0</span></div><button id="logoutBtn" class="hidden" onclick="logout()" style="background:#d50000;color:white;border:none;padding:8px 12px;border-radius:10px;font-weight:800">Sortir</button></div>
+<div class="container">
+
+<div id="authScreen">
+  <div class="card card-christmas" style="text-align:center"><h1 style="font-size:32px;margin:5px">🎄 Bienvenue sur <span style="color:#FFD700">KIZ</span> 🎄</h1><p>❄️ Édition Noël ❄️<br>Battle 1v1 ou en Groupe, Gagne du Cash !</p><div style="background:rgba(0,0,0,0.3);padding:11px;border-radius:11px;font-weight:800">🎁 BONUS NOËL: Recharge 1000 🪙 = +200 BONUS<br><span style="font-size:13px;color:#FFD700">Offre jusqu'au 31 Décembre !</span></div></div>
+  <div class="card"><h2 id="authTitle">🎅 Créer un Compte</h2><input id="username" placeholder="Nom d'utilisateur - Unique"><input id="phone" placeholder="Ton numéro MonCash - ex: 37288940" inputmode="numeric" maxlength="11"><p class="small" style="text-align:left;margin:0">⚠️ 1 numéro MonCash = 1 seul compte. Mets ton VRAI numéro (8 chiffres). C'est là qu'on t'enverra tes retraits. Si faux numéro = pas de paiement !</p><input id="password" type="password" placeholder="Mot de passe"><input id="referral" placeholder="Code parrain (optionnel) - ex: Theo686"><button class="btn btn-yellow" onclick="handleAuth()" id="authBtn">🎄 CRÉER UN COMPTE</button><button class="btn btn-outline" onclick="toggleAuth()" id="toggleBtn">J'ai déjà un compte ? Se connecter</button><p class="small" id="authMsg"></p><p class="small">🎁 Parrainage: Mets le nom de ton ami, il gagne +10 🪙 et toi aussi tu gagnes quand il joue !</p></div>
+</div>
+
+<div id="homeScreen" class="hidden">
+  <div class="promo-banner">🎄 PROMO NOËL 🎄 Recharge 1000 🪙 = +200 BONUS jusqu'au 31 Dec !</div>
+  <div class="card card-christmas" style="text-align:center"><p style="margin:0">Bonjour, <b id="userName">Joueur</b> 🎅</p><h1 style="font-size:44px;margin:10px 0">🪙 <span id="homeBalance">0</span></h1><p style="color:#FFD700;margin:0">Ton Solde • 1 🪙 = 1 Gdes • Min pour jouer: 100 🪙</p></div>
+  <div class="card" style="border:2px solid #FFD700"><h3 style="text-align:center;margin:0">🔗 Ton Parrainage</h3><p style="text-align:center">Ton code: <b id="myReferralCode" style="color:#FFD700;font-size:20px"></b> <button onclick="copyReferral()" style="background:#FFD700;border:none;padding:6px 10px;border-radius:8px;font-weight:900">📋 Copier</button></p><div style="display:flex;gap:10px;text-align:center"><div style="flex:1;background:#2a2a45;padding:10px;border-radius:10px"><div style="font-size:22px;font-weight:900" id="refCount">0</div><div style="font-size:12px;color:#aaa">Amis invités</div></div><div style="flex:1;background:#2a2a45;padding:10px;border-radius:10px"><div style="font-size:22px;font-weight:900;color:#00e676" id="refEarned">0 🪙</div><div style="font-size:12px;color:#aaa">Gagné via parrainage</div></div></div><p class="small">Chaque ami qui met ton nom = +10 🪙 pour toi + +10 🪙 pour lui ! Partage ton nom sur TikTok / WhatsApp</p><button class="btn btn-outline" onclick="showScreen('referralScreen');loadReferralBoard()" style="padding:10px">🏆 Voir Classement Parrainage</button></div>
+  <div class="grid">
+    <div class="game-card" onclick="showScreen('battleScreen');switchBattleTab('1v1')" style="border:2px solid #FFD700"><div style="font-size:38px">⚔️</div><h3>Battle 1v1</h3><p class="small">Duel • Gagnant prend tout</p><span class="badge">MIN 100 🪙</span></div>
+    <div class="game-card" onclick="showScreen('battleScreen');switchBattleTab('group');loadPublicRooms()" style="border:2px solid #00e676"><div style="font-size:38px">👥</div><h3>Salles Groupe</h3><p class="small">Privée / Publique • Min 5</p><span class="badge">MIN 100 🪙</span></div>
+    <div class="game-card" onclick="showScreen('battleScreen');switchBattleTab('speed')" style="border:2px solid #ff6d00"><div style="font-size:38px">⚡</div><h3>Speed Quiz</h3><p class="small">10 Q • 5s • Le plus rapide gagne</p><span class="badge" style="background:#ff6d00;color:white">NOUVEAU !</span></div>
+    <div class="game-card" onclick="showScreen('topupScreen');loadTopupHistory()" style="border:2px solid #d50000"><div style="font-size:38px">🎄💳</div><h3>Recharger</h3><p class="small">NatCash / MonCash<br><b style="color:#FFD700">+ BONUS NOËL</b></p></div>
+    <div class="game-card" onclick="showScreen('withdrawScreen')"><div style="font-size:38px">💸</div><h3>Retirer</h3><p class="small">Minimum 500 🪙</p></div>
+    <div class="game-card" onclick="showScreen('leaderScreen');loadLeaderboard()"><div style="font-size:38px">🏆</div><h3>Classement</h3><p class="small">Top Joueurs Noël</p></div>
+  </div>
+  <button class="btn btn-christmas" onclick="showScreen('battleScreen');switchBattleTab('1v1')">⚔️ JOUER UN DUEL 1v1 🎄</button>
+  <button class="btn btn-speed" onclick="showScreen('battleScreen');switchBattleTab('speed')">⚡ SPEED QUIZ - 5s PAR QUESTION</button>
+</div>
+
+<div id="referralScreen" class="hidden"><div class="card"><h2>🏆 Classement Parrainage</h2><p class="small">Ceux qui invitent le plus d'amis</p><div id="refBoard">Chargement...</div><button class="btn btn-outline" onclick="showScreen('homeScreen')">← Retour</button></div></div>
+
+<div id="battleScreen" class="hidden">
+  <div class="card" style="text-align:center"><h2>⚔️ Battle 🎄</h2><p class="small">Min 100 🪙 • Mise 20 🪙 • Timer 15s / Speed 5s</p><div style="display:flex;gap:8px"><button class="tab-btn active" id="tab1v1" onclick="switchBattleTab('1v1')">⚔️ 1v1</button><button class="tab-btn" id="tabGroup" onclick="switchBattleTab('group')">👥 Groupe</button><button class="tab-btn" id="tabSpeed" onclick="switchBattleTab('speed')">⚡ Speed</button></div></div>
+  <div id="battle1v1Tab"><div class="card" style="text-align:center"><h3>⚔️ Battle 1v1</h3><p class="small">Mise: 20 🪙 chacun • Pot 40 🪙 • Gagnant prend TOUT</p></div><div class="card"><h3>Créer un Duel</h3><button class="btn btn-yellow" onclick="create1v1Room()">⚔️ CRÉER UN DUEL 1v1</button><p id="oneVOneCodeDisplay" style="text-align:center;font-size:22px;font-weight:900;color:#FFD700"></p><hr style="border-color:#333"><h3>Rejoindre un Duel</h3><input id="join1v1Code" placeholder="Code du duel (ex: 4821)" inputmode="numeric"><button class="btn btn-purple" onclick="join1v1Room()">⚔️ REJOINDRE</button><p id="roomMsg1v1" class="small"></p></div></div>
+  <div id="battleGroupTab" class="hidden"><div class="card" style="text-align:center"><h3>👥 Battle Groupe</h3><p class="small">Mise: 20 🪙 • Min 5 • 1er: 50% • 2ème: 30% • 3ème: 20%</p></div><div class="card"><h3>🔒 Salle Privée</h3><input id="privateRoomName" placeholder="Nom de ta salle privée"><button class="btn btn-yellow" onclick="createPrivateRoom()">🔒 CRÉER SALLE PRIVÉE</button><p id="privateCodeDisplay" style="text-align:center;font-size:22px;font-weight:900;color:#FFD700"></p><input id="joinPrivateCode" placeholder="Code salle privée" inputmode="numeric"><button class="btn btn-outline" onclick="joinPrivateRoom()">🔑 REJOINDRE AVEC CODE</button><p id="roomMsg" class="small"></p><hr style="border-color:#333"><h3>🌍 Salles Publiques</h3><button class="btn btn-purple" onclick="createPublicRoom()">🌍 CRÉER SALLE PUBLIQUE</button><button class="btn btn-green" onclick="loadPublicRooms()">🔄 Actualiser</button><div id="publicRoomsList"><p class="small">Chargement...</p></div></div></div>
+  <div id="battleSpeedTab" class="hidden"><div class="card" style="text-align:center;border:2px solid #ff6d00"><h3>⚡ SPEED QUIZ</h3><p class="small">10 Questions • 5 secondes chacune • +10 pts si bonne + bonus vitesse<br>Mise: 20 🪙 • Gagnant prend tout si 1v1, ou 50/30/20 si groupe</p></div><div class="card"><h3>⚡ Créer Speed Battle</h3><button class="btn btn-speed" onclick="createSpeedRoom()">⚡ CRÉER SPEED BATTLE</button><p id="speedCodeDisplay" style="text-align:center;font-size:22px;font-weight:900;color:#FFD700"></p><hr style="border-color:#333"><h3>Rejoindre Speed</h3><input id="joinSpeedCode" placeholder="Code Speed" inputmode="numeric"><button class="btn btn-purple" onclick="joinSpeedRoom()">⚡ REJOINDRE SPEED</button><p id="roomMsgSpeed" class="small"></p></div></div>
+  <div class="card hidden" id="roomWaiting"><h3 style="text-align:center" id="waitingTitle">En attente...</h3><p style="text-align:center;font-size:26px;font-weight:900;color:#FFD700" id="waitingCode"></p><p style="text-align:center">Joueurs: <b id="waitingCount">0</b> • <span id="waitingMinText">Min 5</span></p><div id="waitingPlayers" style="text-align:center"></div><div style="background:#2a2a45;padding:12px;border-radius:10px;text-align:center;margin-top:10px;font-weight:800" id="waitingBar">⏳ En attente...</div>
+  <div style="margin-top:14px"><h4 style="margin:0;text-align:left">💬 Chat Salle - Trash Talk !</h4><div class="chat-box" id="chatBox"><p class="small">Aucun message. Dis quelque chose !</p></div><div style="display:flex;gap:8px;margin-top:8px"><input id="chatInput" placeholder="Ex: map pèdi, ou ap pèdi..." style="margin:0;flex:1"><button onclick="sendChat()" style="background:#FFD700;border:none;padding:12px 16px;border-radius:11px;font-weight:900">Envoyer</button></div><div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button onclick="quickChat('map pèdi 😂')" style="background:#2a2a45;color:white;border:none;padding:7px 10px;border-radius:20px;font-size:12px">map pèdi 😂</button><button onclick="quickChat('ou ap pèdi')" style="background:#2a2a45;color:white;border:none;padding:7px 10px;border-radius:20px;font-size:12px">ou ap pèdi</button><button onclick="quickChat('mwen pi fò 💪')" style="background:#2a2a45;color:white;border:none;padding:7px 10px;border-radius:20px;font-size:12px">mwen pi fò 💪</button><button onclick="quickChat('bonne chance 🍀')" style="background:#2a2a45;color:white;border:none;padding:7px 10px;border-radius:20px;font-size:12px">bonne chance 🍀</button></div></div>
+  <p class="small">Partage le code si c'est une salle privée !</p><button class="btn btn-outline" onclick="leaveRoom()">Quitter la Salle</button></div>
+  <div class="card hidden" id="roomPlay"><h3 style="text-align:center" id="roomPlayTitle">⚔️ Battle</h3><div style="display:flex;justify-content:space-between"><span>Ton score: <b id="roomMyScore">0</b></span><span>⏱️ <b id="roomTimer">15</b>s</span></div><div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div><div class="progress"><div class="progress-fill" id="roomProgress" style="width:20%"></div></div><h3 id="roomQ" style="margin-top:14px">Question...</h3><div id="roomOptions"></div><p id="roomFeedback" style="text-align:center;font-weight:800"></p><button id="roomNext" class="btn btn-green hidden" onclick="roomNextQ()">Suivante →</button></div>
+  <button class="btn btn-outline" onclick="showScreen('homeScreen')" style="margin:0 20px 20px 20px;width:calc(100% - 40px)">← Retour</button>
+</div>
+
+<div id="leaderScreen" class="hidden"><div class="card"><h2>🏆 Classement Noël 🎄</h2><div id="leaderList">Chargement...</div><button class="btn btn-outline" onclick="showScreen('homeScreen')">← Retour</button></div></div>
+
+<div id="topupScreen" class="hidden">
+  <div class="card card-christmas" style="text-align:center"><h2>🎄 KIZ Top Up 🎄</h2><p style="color:#FFD700">🎁 BONUS NOËL: 1000 🪙 = +200 BONUS</p></div>
+  <div class="topup-section-title"><span>01.</span> <b>Choose Amount</b></div>
+  <div class="topup-opt selected" onclick="selectTopup(this,100)"><span>🪙 <b>100 Coins</b></span><b style="color:#FFD700">100 HTG</b></div>
+  <div class="topup-opt" onclick="selectTopup(this,250)"><span>🪙 <b>250 Coins</b></span><b style="color:#FFD700">250 HTG</b></div>
+  <div class="topup-opt" onclick="selectTopup(this,500)"><span>🪙 <b>500 Coins</b></span><b style="color:#FFD700">500 HTG</b></div>
+  <div class="topup-opt best" onclick="selectTopup(this,1000)"><span>🎄 <b>1000 Coins + 200 BONUS</b><br><span style="font-size:12px;color:#aaa">Tu reçois 1200 🪙 !</span></span><div style="text-align:right"><b style="color:#FFD700">1000 HTG</b><br><span class="badge-green">🎄 BEST</span></div></div>
+  <div class="topup-section-title"><span>02.</span> <b>Player Information</b></div>
+  <p class="topup-label">Your Username</p><input id="topupPlayer" placeholder="Enter your Player ID" readonly style="background:#0e2a4a;color:#00bfff;font-weight:900">
+  <p class="topup-label">Your MonCash Number</p><input id="topupPhone" placeholder="Ton numéro MonCash" readonly style="background:#0e2a4a;color:#00bfff;font-weight:900">
+  <div class="topup-section-title"><span>03.</span> <b>Payment Method</b></div>
+  <p class="topup-label">Choose Payment Method</p>
+  <select id="paymentMethod" onchange="showPaymentInfo()"><option value="">Choose payment method</option><option value="MonCash">MonCash</option><option value="NatCash">NatCash</option></select>
+  <div id="paymentInfoBox" class="pay-info-box hidden"><div><b>MonCash: <span style="color:#FFD700">+509 3728-8940</span></b></div><div style="margin-top:6px"><b>NatCash: <span style="color:#FFD700">+509 4317-9991</span></b></div><p style="color:#aaa;font-size:13px">Send <b id="exactAmountText" style="color:white">100 HTG</b> to <b id="selectedMethodText" style="color:#FFD700">MonCash</b>.</p><button class="btn btn-yellow" onclick="copySelectedNumber()" style="padding:10px;font-size:14px">📋 Copy Number</button><p id="copyMsg" class="small"></p></div>
+  <p class="topup-label">Payment Transaction Number</p><input id="topupCode" placeholder="Enter transaction number">
+  <p class="topup-label">📸 Upload Screenshot Receipt (Obligatoire pour éviter fake)</p>
+  <input type="file" id="receiptFile" accept="image/*" onchange="previewReceipt(event)" style="background:#0e2a4a">
+  <img id="receiptPreview" class="receipt-preview hidden">
+  <p class="small" style="text-align:left">Prends screenshot de ton MonCash / NatCash après paiement et upload ici. Sans screenshot, admin peut refuser.</p>
+  <button class="btn btn-blue" onclick="submitTopup()" style="width:auto;padding:13px 24px">Submit Order</button><p id="topupMsg" class="small" style="text-align:left"></p>
+  <div class="topup-section-title"><span>04.</span> <b>Transaction History</b></div><div id="topupHistoryList"><p class="small">Chargement...</p></div>
+  <button class="btn btn-outline" onclick="showScreen('homeScreen')">← Retour</button>
+</div>
+
+<div id="withdrawScreen" class="hidden"><div class="card"><h2>💸 Retirer 🎄</h2><p>Solde: <b id="withdrawBalance">0</b> 🪙</p><p class="small">Retrait traité en max 24h • On envoie sur ton MonCash: <b id="withdrawPhoneDisplay" style="color:#FFD700"></b></p><input id="withdrawAmount" type="number" placeholder="Montant (min 500)"><input id="withdrawPhone" placeholder="Confirme ton numéro MonCash"><button class="btn btn-green" onclick="submitWithdraw()">🎄 DEMANDER MON RETRAIT</button><p id="withdrawMsg" class="small"></p><button class="btn btn-outline" onclick="showScreen('homeScreen')">← Retour</button></div></div>
+<div id="historyScreen" class="hidden"><div class="card"><h2>📜 Historique</h2><div id="historyList">Chargement...</div><button class="btn btn-outline" onclick="showScreen('homeScreen')">← Retour</button></div></div>
+</div>
+<script>
+function createSnow(){const c=document.getElementById('snowContainer');const emojis=['❄️','❄️','✨','❄️','🎄'];for(let i=0;i<25;i++){const s=document.createElement('div');s.className='snowflake';s.innerText=emojis[Math.floor(Math.random()*emojis.length)];s.style.left=Math.random()*100+'vw';s.style.animationDuration=(4+Math.random()*6)+'s';s.style.animationDelay=(Math.random()*5)+'s';s.style.fontSize=(12+Math.random()*14)+'px';c.appendChild(s);}}
+createSnow();
+const SUPABASE_URL="https://cdnsysqzrrvysvwrydcx.supabase.co";
+const SUPABASE_KEY="sb_publishable_b4FSPZKzzMw22Ju-mipBAQ_dmwDCjU6";
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let isLogin=false,currentUser=null,selectedTopup=100,selectedPaymentMethod="",receiptData="",notifPoll=null,lastTopupStatus={};
+const QUESTIONS=[
+{q:"Quelle est la capitale d'Haïti ?",options:["Cap-Haïtien","Port-au-Prince","Jacmel","Gonaïves"],answer:1},
+{q:"En quelle année Haïti a obtenu son indépendance ?",options:["1804","1806","1791","1825"],answer:0},
+{q:"Combien de couleurs dans le drapeau haïtien ?",options:["2","3","4","5"],answer:0},
+{q:"Quel est le plus grand océan ?",options:["Atlantique","Indien","Arctique","Pacifique"],answer:3},
+{q:"Combien font 7 x 8 ?",options:["54","56","48","64"],answer:1},
+{q:"Qui a écrit 'Roméo et Juliette' ?",options:["Victor Hugo","Molière","Shakespeare","Balzac"],answer:2},
+{q:"Capitale de la France ?",options:["Lyon","Marseille","Paris","Nice"],answer:2},
+{q:"Jours dans une année bissextile ?",options:["365","366","364","360"],answer:1},
+{q:"Animal symbole d'Haïti ?",options:["Lion","Aigle","Coq","Cheval"],answer:1},
+{q:"Langue officielle du Brésil ?",options:["Espagnol","Français","Portugais","Anglais"],answer:2},
+{q:"Combien font 100 - 37 ?",options:["63","73","67","60"],answer:0},
+{q:"Pays de la Tour Eiffel ?",options:["Italie","Espagne","France","Belgique"],answer:2},
+{q:"Couleur du ciel par beau temps ?",options:["Vert","Bleu","Rouge","Jaune"],answer:1},
+{q:"Quel organe pompe le sang ?",options:["Poumon","Foie","Cœur","Rein"],answer:2},
+{q:"Combien de continents ?",options:["5","6","7","8"],answer:2},
+{q:"Capitale du Canada ?",options:["Toronto","Ottawa","Montréal","Vancouver"],answer:1},
+{q:"Combien font 12 x 12 ?",options:["124","144","132","120"],answer:1},
+{q:"Fruit jaune et courbé ?",options:["Pomme","Banane","Orange","Raisin"],answer:1},
+{q:"Qui a peint la Joconde ?",options:["Picasso","Van Gogh","Léonard de Vinci","Monet"],answer:2},
+{q:"Plus grande planète ?",options:["Mars","Terre","Jupiter","Saturne"],answer:2},
+{q:"Combien font 15 + 27 ?",options:["42","32","52","40"],answer:0},
+{q:"Quelle est la capitale du Japon ?",options:["Séoul","Pékin","Tokyo","Bangkok"],answer:2},
+{q:"Quel est le fleuve le plus long du monde ?",options:["Amazone","Nil","Yangtsé","Mississippi"],answer:1},
+{q:"Combien de pattes a une araignée ?",options:["6","8","10","4"],answer:1},
+{q:"Quel gaz respirons-nous pour vivre ?",options:["CO2","Oxygène","Azote","Hydrogène"],answer:1},
+{q:"Quelle est la monnaie d'Haïti ?",options:["Peso","Dollar","Gourde","Euro"],answer:2},
+{q:"Qui était Toussaint Louverture ?",options:["Un poète","Un héros de l'indépendance","Un président français","Un chanteur"],answer:1},
+{q:"Combien font 9 x 9 ?",options:["81","72","90","99"],answer:0},
+{q:"Quelle ville est la 2ème ville d'Haïti ?",options:["Jacmel","Cap-Haïtien","Les Cayes","Gonaïves"],answer:1},
+{q:"Quel est le plat national d'Haïti ?",options:["Griyo","Pizza","Tacos","Sushi"],answer:0},
+{q:"Combien de minutes dans 2 heures ?",options:["60","100","120","180"],answer:2},
+{q:"Quelle est la capitale des USA ?",options:["New York","Washington DC","Los Angeles","Chicago"],answer:1},
+{q:"Quel animal dit 'Miaou' ?",options:["Chien","Chat","Vache","Cheval"],answer:1},
+{q:"Combien font 50 / 5 ?",options:["5","10","15","20"],answer:1},
+{q:"Quel est le plus petit pays du monde ?",options:["Monaco","Vatican","Malte","Andorre"],answer:1},
+{q:"Quelle saison vient après l'été ?",options:["Hiver","Printemps","Automne","Été"],answer:2},
+{q:"Combien de joueurs dans une équipe de football ?",options:["9","10","11","12"],answer:2},
+{q:"Quelle est la couleur du drapeau du Brésil ?",options:["Rouge","Vert et Jaune","Bleu et Blanc","Noir"],answer:1},
+{q:"Combien font 200 - 125 ?",options:["75","65","85","70"],answer:0},
+{q:"Quel instrument a 88 touches ?",options:["Guitare","Piano","Violon","Flûte"],answer:1}
+];
+function showNotif(text,bg="#00c853"){const box=document.getElementById('notifBox');box.innerHTML=`<div class="notif" style="background:${bg}">${text}</div>`;setTimeout(()=>{box.innerHTML="";},6000);}
+function copyReferral(){navigator.clipboard.writeText(currentUser.username).then(()=>showNotif("✅ Code parrain copié: "+currentUser.username));}
+function copySelectedNumber(){const num=selectedPaymentMethod==="NatCash"?"43179991":"37288940";navigator.clipboard.writeText(num).then(()=>{document.getElementById('copyMsg').innerText="✅ "+num+" copié !";document.getElementById('copyMsg').style.color="#00e676";});}
+function showPaymentInfo(){const m=document.getElementById('paymentMethod').value;selectedPaymentMethod=m;if(!m){document.getElementById('paymentInfoBox').classList.add('hidden');return;}document.getElementById('paymentInfoBox').classList.remove('hidden');document.getElementById('exactAmountText').innerText=selectedTopup+" HTG";document.getElementById('selectedMethodText').innerText=m;}
+function previewReceipt(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=(ev)=>{receiptData=ev.target.result;const img=document.getElementById('receiptPreview');img.src=receiptData;img.classList.remove('hidden');};r.readAsDataURL(f);}
+function hasMinCoins(){if(!currentUser)return false;if(currentUser.coins<100){alert("⛔ Il faut minimum 100 🪙 pour jouer !\nTon solde: "+currentUser.coins+" 🪙");showScreen('homeScreen');return false;}return true;}
+function switchBattleTab(tab){['1v1','group','speed'].forEach(t=>{document.getElementById('battle'+(t==='1v1'?'1v1':t==='group'?'Group':'Speed')+'Tab').classList.toggle('hidden',tab!==t);document.getElementById('tab'+(t==='1v1'?'1v1':t==='group'?'Group':'Speed')).classList.toggle('active',tab===t);});}
+function toggleAuth(){isLogin=!isLogin;document.getElementById('authTitle').innerText=isLogin?"Se Connecter":"🎅 Créer un Compte";document.getElementById('authBtn').innerText=isLogin?"SE CONNECTER":"🎄 CRÉER UN COMPTE";document.getElementById('toggleBtn').innerText=isLogin?"Pas de compte ? Créer un compte":"J'ai déjà un compte ? Se connecter";}
+function showScreen(id){['authScreen','homeScreen','topupScreen','withdrawScreen','historyScreen','battleScreen','leaderScreen','referralScreen'].forEach(s=>document.getElementById(s).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');window.scrollTo(0,0);}
+async function handleAuth(){
+  const username=document.getElementById('username').value.trim();
+  let phone=document.getElementById('phone').value.trim().replace(/[^0-9]/g,'');
+  if(phone.startsWith('509')&&phone.length===11) phone=phone.slice(3);
+  const password=document.getElementById('password').value.trim();
+  const referral=document.getElementById('referral').value.trim();
+  const msg=document.getElementById('authMsg');
+  if(!username||!phone||!password){msg.innerText="Remplis tous les champs !";msg.style.color="red";return;}
+  if(!isLogin){
+    if(username.length<3){msg.innerText="⛔ Nom trop court ! Min 3 lettres";msg.style.color="red";return;}
+    if(phone.length!==8){msg.innerText="⛔ Numéro MonCash invalide ! Mets 8 chiffres - ex: 37288940";msg.style.color="red";return;}
+    if(!/^[34]/.test(phone)){msg.innerText="⛔ Ce n'est pas un numéro MonCash Haïti ! Il doit commencer par 3 ou 4";msg.style.color="red";return;}
+    if(password.length<4){msg.innerText="⛔ Mot de passe trop court ! Min 4 caractères";msg.style.color="red";return;}
+  }
+  msg.innerText="Chargement...";
+  if(isLogin){
+    // Login: username insensible à la casse
+    const {data,error}=await supabaseClient.from('profiles').select('*').ilike('username',username).eq('password_hash',password).single();
+    if(error||!data){msg.innerText="Nom ou mot de passe incorrect.";msg.style.color="red";return;}
+    currentUser=data;loginSuccess();
+  } else {
+    // 1 - CHECK USERNAME UNIQUE (insensible à la casse)
+    const {data:exName}=await supabaseClient.from('profiles').select('id,username').ilike('username',username).single();
+    if(exName){msg.innerText="⛔ Ce nom '"+exName.username+"' est déjà pris ! Choisis un autre nom.";msg.style.color="red";return;}
+    // 2 - CHECK PHONE UNIQUE - 1 numéro = 1 compte
+    const {data:exPhone}=await supabaseClient.from('profiles').select('id,username').eq('phone',phone).single();
+    if(exPhone){msg.innerText="⛔ Ce numéro MonCash est déjà utilisé par '"+exPhone.username+"' ! 1 numéro = 1 seul compte. Connecte-toi avec ce compte.";msg.style.color="red";return;}
+    // 3 - CHECK PARRAIN EXISTE (si mis)
+    if(referral){
+      const {data:refCheck}=await supabaseClient.from('profiles').select('id').ilike('username',referral).single();
+      if(!refCheck){msg.innerText="⛔ Code parrain '"+referral+"' introuvable ! Vérifie le nom ou laisse vide.";msg.style.color="red";return;}
+      if(referral.toLowerCase()===username.toLowerCase()){msg.innerText="⛔ Tu ne peux pas te parrainer toi-même !";msg.style.color="red";return;}
+    }
+    const {data,error}=await supabaseClient.from('profiles').insert([{username,phone,password_hash:password,coins:0,referred_by:referral||null}]).select().single();
+    if(error){
+      // Double sécurité si 2 personnes cliquent en même temps
+      if(error.message.includes('duplicate')||error.code==='23505'){msg.innerText="⛔ Ce nom ou ce numéro vient d'être pris ! Essaie un autre.";msg.style.color="red";return;}
+      msg.innerText="Erreur: "+error.message;msg.style.color="red";return;
+    }
+    currentUser=data;
+    if(referral&&referral!==username){
+      const {data:ref}=await supabaseClient.from('profiles').select('*').ilike('username',referral).single();
+      if(ref){await supabaseClient.from('profiles').update({coins:ref.coins+10}).eq('id',ref.id);}
+    }
+    loginSuccess();
+  }
+}
+async function loginSuccess(){document.getElementById('userName').innerText=currentUser.username;document.getElementById('myReferralCode').innerText=currentUser.username;document.getElementById('topupPlayer').value=currentUser.username;document.getElementById('topupPhone').value=currentUser.phone||"";document.getElementById('withdrawPhone').value=currentUser.phone||"";document.getElementById('withdrawPhoneDisplay').innerText=currentUser.phone||"";updateBalanceUI();await loadReferralStats();document.getElementById('balanceBadge').classList.remove('hidden');document.getElementById('logoutBtn').classList.remove('hidden');showScreen('homeScreen');startNotifPolling();}
+async function loadReferralStats(){if(!currentUser)return;const {data}=await supabaseClient.from('profiles').select('id').ilike('referred_by',currentUser.username);const count=data?data.length:0;document.getElementById('refCount').innerText=count;document.getElementById('refEarned').innerText=(count*10)+" 🪙";}
+async function loadReferralBoard(){const {data}=await supabaseClient.from('profiles').select('username,referred_by');const counts={};(data||[]).forEach(p=>{if(p.referred_by)counts[p.referred_by]=(counts[p.referred_by]||0)+1;});const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);document.getElementById('refBoard').innerHTML=!sorted.length?"Personne n'a encore parrainé. Sois le premier !":sorted.map(([name,c],i)=>`<div style="padding:10px;border-bottom:1px solid #333;display:flex;justify-content:space-between"><span>${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'} ${name} ${name===currentUser.username?'(Toi)':''}</span><b>${c} amis • +${c*10} 🪙</b></div>`).join('');}
+function updateBalanceUI(){document.getElementById('balanceVal').innerText=currentUser.coins;document.getElementById('homeBalance').innerText=currentUser.coins;document.getElementById('withdrawBalance').innerText=currentUser.coins;}
+function logout(){currentUser=null;clearInterval(notifPoll);document.getElementById('balanceBadge').classList.add('hidden');document.getElementById('logoutBtn').classList.add('hidden');showScreen('authScreen');}
+function startNotifPolling(){if(notifPoll)clearInterval(notifPoll);notifPoll=setInterval(async()=>{if(!currentUser)return;const {data}=await supabaseClient.from('topups').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(5);if(!data)return;for(const t of data){if(lastTopupStatus[t.id] && lastTopupStatus[t.id]==='pending' && t.status==='approved'){const {data:profile}=await supabaseClient.from('profiles').select('*').eq('id',currentUser.id).single();if(profile)currentUser=profile;updateBalanceUI();showNotif(`✅ Topup Approuvé ! +${Math.abs(t.amount)} 🪙 ajouté à ton solde ! 🎄`);loadReferralStats();}if(lastTopupStatus[t.id] && lastTopupStatus[t.id]==='pending' && t.status==='rejected'){showNotif(`❌ Topup Rejeté: ${t.amount} 🪙 - Contacte admin`, "#d50000");}lastTopupStatus[t.id]=t.status;}const {data:me}=await supabaseClient.from('profiles').select('coins').eq('id',currentUser.id).single();if(me && me.coins!==currentUser.coins){currentUser.coins=me.coins;updateBalanceUI();}},5000);}
+async function loadLeaderboard(){const {data}=await supabaseClient.from('profiles').select('username,coins').order('coins',{ascending:false}).limit(10);const l=document.getElementById('leaderList');if(!data||!data.length){l.innerHTML="Aucun joueur.";return;}l.innerHTML=data.map((p,i)=>`<div style="padding:10px;border-bottom:1px solid #333;display:flex;justify-content:space-between"><span>${i===0?'🥇 🎅':i===1?'🥈':i===2?'🥉':(i+1)+'.'} ${p.username} ${p.username===currentUser.username?'(Toi)':''}</span><b>${p.coins} 🪙</b></div>`).join('');}
+async function sendChat(){const input=document.getElementById('chatInput');const msg=input.value.trim();if(!msg||!currentRoomCode)return;input.value="";await supabaseClient.from('chat_messages').insert([{room_code:currentRoomCode,username:currentUser.username,message:msg}]);loadChat();}
+function quickChat(txt){document.getElementById('chatInput').value=txt;sendChat();}
+async function loadChat(){if(!currentRoomCode)return;const {data}=await supabaseClient.from('chat_messages').select('*').eq('room_code',currentRoomCode).order('created_at',{ascending:true}).limit(30);const box=document.getElementById('chatBox');if(!data||!data.length){box.innerHTML="<p class='small'>Aucun message. Dis quelque chose !</p>";return;}box.innerHTML=data.map(m=>`<div class="chat-msg"><b>${m.username}:</b> ${m.message}</div>`).join('');box.scrollTop=box.scrollHeight;}
+let currentRoomId=null,currentRoomCode=null,roomPoll=null,roomQs=[],roomQIndex=0,roomScore=0,roomStarted=false,currentRoomMode='group',roomTimer=null,roomTimeLeft=15,roomAnswered=false,isSpeedMode=false;
+function is1v1Room(room){return room&&room.room_name&&room.room_name.startsWith('1V1');}
+function isSpeedRoom(room){return room&&room.room_name&&room.room_name.startsWith('SPEED');}
+async function create1v1Room(){if(!hasMinCoins())return;const code=Math.floor(1000+Math.random()*9000).toString();const players=[{username:currentUser.username,score:0,finished:false}];const {data,error}=await supabaseClient.from('rooms').insert([{room_code:code,is_private:true,room_name:"1V1 - "+currentUser.username,players,status:'waiting'}]).select().single();if(error){document.getElementById('roomMsg1v1').innerText="Erreur: "+error.message;return;}currentRoomId=data.id;currentRoomCode=code;currentRoomMode='1v1';isSpeedMode=false;document.getElementById('oneVOneCodeDisplay').innerText="TON CODE DUEL: "+code;enterWaiting(data);}
+async function join1v1Room(){if(!hasMinCoins())return;const code=document.getElementById('join1v1Code').value.trim();if(!code){document.getElementById('roomMsg1v1').innerText="Entre un code !";return;}await joinRoomByCode(code,'1v1');}
+async function createPrivateRoom(){if(!hasMinCoins())return;const name=document.getElementById('privateRoomName').value.trim()||("Salle de "+currentUser.username);const code=Math.floor(1000+Math.random()*9000).toString();const players=[{username:currentUser.username,score:0,finished:false}];const {data,error}=await supabaseClient.from('rooms').insert([{room_code:code,is_private:true,room_name:name,players,status:'waiting'}]).select().single();if(error){document.getElementById('roomMsg').innerText="Erreur: "+error.message;return;}currentRoomId=data.id;currentRoomCode=code;currentRoomMode='group';isSpeedMode=false;document.getElementById('privateCodeDisplay').innerText="TON CODE: "+code;enterWaiting(data);}
+async function createPublicRoom(){if(!hasMinCoins())return;const name="Salle Publique - "+currentUser.username;const code=Math.floor(1000+Math.random()*9000).toString();const players=[{username:currentUser.username,score:0,finished:false}];const {data,error}=await supabaseClient.from('rooms').insert([{room_code:code,is_private:false,room_name:name,players,status:'waiting'}]).select().single();if(error){document.getElementById('roomMsg').innerText="Erreur: "+error.message;return;}currentRoomId=data.id;currentRoomCode=code;currentRoomMode='group';isSpeedMode=false;enterWaiting(data);}
+async function createSpeedRoom(){if(!hasMinCoins())return;const code=Math.floor(1000+Math.random()*9000).toString();const players=[{username:currentUser.username,score:0,finished:false}];const {data,error}=await supabaseClient.from('rooms').insert([{room_code:code,is_private:true,room_name:"SPEED - "+currentUser.username,players,status:'waiting'}]).select().single();if(error){document.getElementById('roomMsgSpeed').innerText="Erreur: "+error.message;return;}currentRoomId=data.id;currentRoomCode=code;currentRoomMode='speed';isSpeedMode=true;document.getElementById('speedCodeDisplay').innerText="TON CODE SPEED: "+code+" - 5s par question !";enterWaiting(data);}
+async function joinSpeedRoom(){if(!hasMinCoins())return;const code=document.getElementById('joinSpeedCode').value.trim();if(!code){document.getElementById('roomMsgSpeed').innerText="Entre un code !";return;}await joinRoomByCode(code,'speed');}
+async function loadPublicRooms(){const {data}=await supabaseClient.from('rooms').select('*').eq('is_private',false).eq('status','waiting').order('created_at',{ascending:false}).limit(20);const list=document.getElementById('publicRoomsList');if(!list)return;if(!data||!data.length){list.innerHTML="<p class='small'>Aucune salle publique. Crée-en une !</p>";return;}const groupRooms=data.filter(r=>!is1v1Room(r)&&!isSpeedRoom(r));if(!groupRooms.length){list.innerHTML="<p class='small'>Aucune salle publique groupe.</p>";return;}list.innerHTML=groupRooms.map(r=>`<div class="room-card"><div><b>${r.room_name}</b><br><span class="small">${r.players.length}/10 joueurs • Code: ${r.room_code}</span></div><button onclick="joinPublicRoom('${r.room_code}')" style="background:#FFD700;border:none;padding:10px 14px;border-radius:10px;font-weight:900">Rejoindre</button></div>`).join('');}
+async function joinPublicRoom(code){if(!hasMinCoins())return;await joinRoomByCode(code,'group');}
+async function joinPrivateRoom(){if(!hasMinCoins())return;const code=document.getElementById('joinPrivateCode').value.trim();if(!code){document.getElementById('roomMsg').innerText="Entre un code !";return;}await joinRoomByCode(code,'group');}
+async function joinRoomByCode(code,mode){if(!hasMinCoins())return;const {data,error}=await supabaseClient.from('rooms').select('*').eq('room_code',code).eq('status','waiting').single();if(error||!data){const el=document.getElementById(mode==='1v1'?'roomMsg1v1':mode==='speed'?'roomMsgSpeed':'roomMsg');if(el)el.innerText="Salle introuvable ou déjà commencée.";return;}if(data.players.find(p=>p.username===currentUser.username)){currentRoomId=data.id;currentRoomCode=code;currentRoomMode=isSpeedRoom(data)?'speed':is1v1Room(data)?'1v1':'group';isSpeedMode=isSpeedRoom(data);enterWaiting(data);return;}const maxP=(is1v1Room(data)||isSpeedRoom(data))?2:10;if(data.players.length>=maxP&&mode!=='speed'){const el=document.getElementById(mode==='1v1'?'roomMsg1v1':'roomMsg');if(el)el.innerText="Salle pleine !";return;}const newPlayers=[...data.players,{username:currentUser.username,score:0,finished:false}];const {data:updated}=await supabaseClient.from('rooms').update({players:newPlayers}).eq('id',data.id).select().single();currentRoomId=data.id;currentRoomCode=code;currentRoomMode=isSpeedRoom(data)?'speed':is1v1Room(data)?'1v1':'group';isSpeedMode=isSpeedRoom(data);enterWaiting(updated);}
+function enterWaiting(room){document.getElementById('battle1v1Tab').classList.add('hidden');document.getElementById('battleGroupTab').classList.add('hidden');document.getElementById('battleSpeedTab').classList.add('hidden');document.getElementById('roomWaiting').classList.remove('hidden');document.getElementById('waitingTitle').innerText=isSpeedRoom(room)?"⚡ SPEED - "+room.room_name:is1v1Room(room)?"⚔️ Duel 1v1 - "+room.room_name:room.is_private?"🔒 "+room.room_name:"🌍 "+room.room_name;document.getElementById('waitingCode').innerText=room.is_private?"CODE: "+room.room_code:"SALLE PUBLIQUE";document.getElementById('waitingMinText').innerText=isSpeedRoom(room)?"Min 2 joueurs - Speed 5s":is1v1Room(room)?"Min 2 joueurs - Duel":"Min 5 joueurs • Max 10";document.getElementById('roomPlayTitle').innerText=isSpeedRoom(room)?"⚡ SPEED QUIZ - 5s !":is1v1Room(room)?"⚔️ Duel 1v1":"⚔️ Battle Groupe";updateWaitingUI(room);if(roomPoll)clearInterval(roomPoll);roomPoll=setInterval(()=>{pollRoom();loadChat();},2000);}
+async function pollRoom(){const {data}=await supabaseClient.from('rooms').select('*').eq('id',currentRoomId).single();if(!data)return;if(data.status==='playing'&&!roomStarted){roomStarted=true;startRoomGame();return;}if(data.status==='waiting'){updateWaitingUI(data);}if(data.status==='finished'){clearInterval(roomPoll);}}
+function updateWaitingUI(room){const is1v1=is1v1Room(room);const isSpeed=isSpeedRoom(room);const minNeeded=(is1v1||isSpeed)?2:5;document.getElementById('waitingCount').innerText=room.players.length;document.getElementById('waitingPlayers').innerHTML=room.players.map(p=>`<span class="player-chip">${p.username} ${p.username===currentUser.username?'(Toi)':''}</span>`).join('');const need=minNeeded-room.players.length;if(room.players.length>=minNeeded){document.getElementById('waitingBar').innerText=isSpeed?"✅ Adversaire trouvé ! Speed commence...":is1v1?"✅ Adversaire trouvé ! Le duel commence...":"✅ 5 joueurs atteints ! Le jeu va commencer...";document.getElementById('waitingBar').style.background="#00c853";if(room.players[0].username===currentUser.username&&!roomStarted){roomStarted=true;setTimeout(async()=>{await supabaseClient.from('rooms').update({status:'playing'}).eq('id',currentRoomId);},3000);}}else{document.getElementById('waitingBar').innerText=isSpeed?`⏳ En attente de ton adversaire Speed (1/2)`:is1v1?`⏳ En attente de ton adversaire (1/2)`:`⏳ Il manque encore ${need} joueur(s) pour commencer (min 5)`;document.getElementById('waitingBar').style.background="#2a2a45";}}
+async function leaveRoom(){clearInterval(roomPoll);const {data}=await supabaseClient.from('rooms').select('*').eq('id',currentRoomId).single();if(data){const newPlayers=data.players.filter(p=>p.username!==currentUser.username);await supabaseClient.from('rooms').update({players:newPlayers}).eq('id',currentRoomId);}currentRoomId=null;currentRoomCode=null;roomStarted=false;document.getElementById('roomWaiting').classList.add('hidden');document.getElementById('battle1v1Tab').classList.remove('hidden');switchBattleTab('1v1');loadPublicRooms();}
+function startRoomGame(){document.getElementById('roomWaiting').classList.add('hidden');document.getElementById('roomPlay').classList.remove('hidden');roomQs=[...QUESTIONS].sort(()=>Math.random()-0.5).slice(0,isSpeedMode?10:5);roomQIndex=0;roomScore=0;showRoomQ();}
+function startTimer(){clearInterval(roomTimer);roomTimeLeft=isSpeedMode?5:15;roomAnswered=false;document.getElementById('roomTimer').innerText=roomTimeLeft;document.getElementById('timerFill').style.width='100%';const total=roomTimeLeft;roomTimer=setInterval(()=>{roomTimeLeft--;document.getElementById('roomTimer').innerText=roomTimeLeft;document.getElementById('timerFill').style.width=(roomTimeLeft/total*100)+'%';if(roomTimeLeft<=0){clearInterval(roomTimer);if(!roomAnswered){roomAnswered=true;const q=roomQs[roomQIndex];const btns=document.querySelectorAll('#roomOptions .option');btns.forEach(b=>b.disabled=true);btns[q.answer].classList.add('correct');document.getElementById('roomFeedback').innerText="⏰ Temps écoulé !";document.getElementById('roomFeedback').style.color="#FFD700";document.getElementById('roomNext').classList.remove('hidden');}}},1000);}
+function showRoomQ(){const totalQ=isSpeedMode?10:5;if(roomQIndex>=roomQs.length){finishRoomGame();return;}const q=roomQs[roomQIndex];document.getElementById('roomQ').innerText=`Question ${roomQIndex+1}/${totalQ}: ${q.q}`;document.getElementById('roomFeedback').innerText="";document.getElementById('roomNext').classList.add('hidden');document.getElementById('roomMyScore').innerText=roomScore;document.getElementById('roomProgress').style.width=((roomQIndex)/totalQ*100)+'%';const box=document.getElementById('roomOptions');box.innerHTML="";q.options.forEach((opt,i)=>{const b=document.createElement('button');b.className='option';b.innerText=opt;b.onclick=()=>roomAnswer(i,b);box.appendChild(b);});startTimer();}
+function roomAnswer(i,btn){if(roomAnswered)return;roomAnswered=true;const timeLeft=roomTimeLeft;clearInterval(roomTimer);const q=roomQs[roomQIndex];const btns=document.querySelectorAll('#roomOptions .option');btns.forEach(b=>b.disabled=true);if(i===q.answer){btn.classList.add('correct');let pts=20;if(isSpeedMode){pts=10+timeLeft*2;document.getElementById('roomFeedback').innerText=`✅ +${pts} ! Rapide ! (${timeLeft}s restant)`;}else{document.getElementById('roomFeedback').innerText="✅ +20 !";}roomScore+=pts;document.getElementById('roomFeedback').style.color="#00c853";}else{btn.classList.add('wrong');btns[q.answer].classList.add('correct');document.getElementById('roomFeedback').innerText="❌ Raté !";document.getElementById('roomFeedback').style.color="red";}document.getElementById('roomMyScore').innerText=roomScore;document.getElementById('roomNext').classList.remove('hidden');}
+function roomNextQ(){roomQIndex++;showRoomQ();}
+async function finishRoomGame(){clearInterval(roomTimer);document.getElementById('roomQ').innerText="Partie finie ! En attente des autres...";document.getElementById('roomOptions').innerHTML="";document.getElementById('roomProgress').style.width='100%';const {data}=await supabaseClient.from('rooms').select('*').eq('id',currentRoomId).single();if(data){const newPlayers=data.players.map(p=>p.username===currentUser.username?{...p,score:roomScore,finished:true}:p);await supabaseClient.from('rooms').update({players:newPlayers}).eq('id',currentRoomId);}setTimeout(async()=>{const {data:final}=await supabaseClient.from('rooms').select('*').eq('id',currentRoomId).single();const sorted=[...final.players].sort((a,b)=>b.score-a.score);const myRank=sorted.findIndex(p=>p.username===currentUser.username)+1;const is1v1=is1v1Room(final);const isSpeed=isSpeedRoom(final);let reward=0,msg="";if(is1v1||isSpeed){if(myRank===1){reward=40;msg=`${isSpeed?'⚡ SPEED CHAMPION !':'🏆 TU AS GAGNÉ LE DUEL !'}\nToi: ${roomScore} - Adversaire: ${sorted[1]?sorted[1].score:0}\n+40 🪙 (tu prends tout le pot)`;}else{msg=`😢 Tu as perdu.\nToi: ${roomScore} - Adversaire: ${sorted[0].score}\n-20 🪙`;}const newCoins=currentUser.coins-20+reward;const {data:u}=await supabaseClient.from('profiles').update({coins:newCoins}).eq('id',currentUser.id).select().single();if(u)currentUser=u;updateBalanceUI();const ranking=sorted.map((p,i)=>`${i+1}. ${p.username} - ${p.score}`).join('\n');alert(msg+"\n\nPot: 40 🪙\n\nClassement:\n"+ranking);}else{const pot=final.players.length*20;const prize1=Math.floor(pot*0.50);const prize2=Math.floor(pot*0.30);const prize3=Math.floor(pot*0.20);if(myRank===1){reward=prize1;msg=`🏆 TU ES 1er !\nScore: ${roomScore}\nTu gagnes 50% du pot = +${prize1} 🪙`;}else if(myRank===2){reward=prize2;msg=`🥈 Tu es 2ème !\nScore: ${roomScore}\nTu gagnes 30% du pot = +${prize2} 🪙`;}else if(myRank===3){reward=prize3;msg=`🥉 Tu es 3ème !\nScore: ${roomScore}\nTu gagnes 20% du pot = +${prize3} 🪙`;}else{msg=`#${myRank} - Score: ${roomScore}\nPas de gain, tu as perdu ta mise de 20 🪙`;}const newCoins=currentUser.coins-20+reward;const {data:u}=await supabaseClient.from('profiles').update({coins:newCoins}).eq('id',currentUser.id).select().single();if(u)currentUser=u;updateBalanceUI();const ranking=sorted.map((p,i)=>`${i+1}. ${p.username} - ${p.score} ${i===0?'(50%)':i===1?'(30%)':i===2?'(20%)':''}`).join('\n');alert(msg+"\n\nPot total: "+pot+" 🪙\n\nClassement:\n"+ranking);}clearInterval(roomPoll);roomStarted=false;currentRoomId=null;currentRoomCode=null;document.getElementById('roomPlay').classList.add('hidden');document.getElementById('battle1v1Tab').classList.remove('hidden');showScreen('homeScreen');},8000);}
+function selectTopup(el,amt){document.querySelectorAll('.topup-opt').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');selectedTopup=amt;if(document.getElementById('exactAmountText'))document.getElementById('exactAmountText').innerText=amt+" HTG";}
+async function submitTopup(){const code=document.getElementById('topupCode').value.trim();const phone=document.getElementById('topupPhone').value.trim();const method=document.getElementById('paymentMethod').value;const msg=document.getElementById('topupMsg');if(!method){msg.innerText="⚠️ Choisis MonCash ou NatCash d'abord !";msg.style.color="orange";return;}if(!code){msg.innerText="⚠️ Entre ton numéro de transaction !";msg.style.color="orange";return;}if(!phone){msg.innerText="⚠️ Entre ton numéro de téléphone !";msg.style.color="orange";return;}if(!receiptData){if(!confirm("Tu n'as pas upload de screenshot. Continuer quand même ?"))return;}const {data,error}=await supabaseClient.from('topups').insert([{user_id:currentUser.id,username:currentUser.username,amount:selectedTopup,code,phone,status:'pending',payment_method:method,receipt_url:receiptData||null}]).select().single();if(error){msg.innerText="Erreur: "+error.message;return;}if(data)lastTopupStatus[data.id]='pending';msg.innerText="✅ Order Submitted ! Tu seras notifié quand admin approuve.";msg.style.color="#00e676";document.getElementById('topupCode').value="";receiptData="";document.getElementById('receiptPreview').classList.add('hidden');document.getElementById('receiptFile').value="";loadTopupHistory();}
+async function loadTopupHistory(){if(!currentUser)return;const {data}=await supabaseClient.from('topups').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(10);const list=document.getElementById('topupHistoryList');if(!data||!data.length){list.innerHTML="<p class='small'>Aucune transaction.</p>";return;}data.forEach(t=>{if(!lastTopupStatus[t.id])lastTopupStatus[t.id]=t.status;});list.innerHTML=data.map(t=>{const date=new Date(t.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});const method=t.payment_method||(t.code==='RETRAIT'?'Retrait':'MonCash');const statusClass=t.status==='pending'?'status-pending':t.status==='approved'?'status-approved':'status-rejected';const statusText=t.status==='pending'?'Pending':t.status==='approved'?'Approved':'Rejected';const deliveryText=t.status==='pending'?'Pending':t.status==='approved'?'Delivered':'Rejected';return `<div class="history-card"><div style="font-size:15px">Player ID: <b>${t.username}</b> | ${Math.abs(t.amount)} HTG | ${method}</div><div style="margin:8px 0"><span class="${statusClass}">Payment: ${statusText} | Delivery: ${deliveryText}</span></div><div style="color:#aaa;font-size:13px">Payment Placed: ${date}</div><div style="color:#aaa;font-size:13px">Payment Verified: ${t.status==='approved'?'Recorded':'Not recorded'}</div><div style="color:#aaa;font-size:13px">Payment Delivered: ${t.status==='approved'?'Recorded':'Not recorded'}</div><div style="color:#aaa;font-size:13px">Transaction: ${t.code}</div>${t.receipt_url?`<img src="${t.receipt_url}" style="width:100%;max-height:150px;object-fit:cover;border-radius:10px;margin-top:8px">`:""}<button onclick="alert('Reçu KIZ\\nPlayer: ${t.username}\\nMontant: ${Math.abs(t.amount)} HTG\\nMéthode: ${method}\\nTransaction: ${t.code}\\nStatus: ${statusText}\\nDate: ${date}')" style="background:#FFD700;color:black;border:none;padding:10px 18px;border-radius:10px;font-weight:900;margin-top:12px;cursor:pointer">View Receipt</button></div>`;}).join('');}
+async function submitWithdraw(){const amt=parseInt(document.getElementById('withdrawAmount').value);let phone=document.getElementById('withdrawPhone').value.trim().replace(/[^0-9]/g,'');if(phone.startsWith('509')&&phone.length===11)phone=phone.slice(3);const msg=document.getElementById('withdrawMsg');if(!amt||amt<500){msg.innerText="Minimum 500 🪙";return;}if(amt>currentUser.coins){msg.innerText="Pas assez de solde !";return;}if(!phone){msg.innerText="Entre ton numéro.";return;}if(phone.length!==8||!/^[34]/.test(phone)){msg.innerText="⛔ Numéro MonCash invalide ! Mets 8 chiffres commençant par 3 ou 4";return;}if(phone!==currentUser.phone){if(!confirm(`⚠️ Ton numéro MonCash d'inscription est ${currentUser.phone}, tu veux retirer sur ${phone} ?`))return;}const newCoins=currentUser.coins-amt;const {data}=await supabaseClient.from('profiles').update({coins:newCoins}).eq('id',currentUser.id).select().single();if(data)currentUser=data;updateBalanceUI();await supabaseClient.from('topups').insert([{user_id:currentUser.id,username:currentUser.username,amount:-amt,code:'RETRAIT',phone,status:'pending',payment_method:'Retrait'}]);msg.innerText=`✅ Retrait de ${amt} 🪙 demandé sur ${phone} !`;msg.style.color="#00e676";}
+async function loadHistory(){const {data}=await supabaseClient.from('topups').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(20);const list=document.getElementById('historyList');if(!data||!data.length){list.innerHTML="<p>Aucune transaction.</p>";return;}list.innerHTML=data.map(t=>`<div style="padding:10px;border-bottom:1px solid #333;display:flex;justify-content:space-between"><span>${t.code} - ${t.status} - ${t.payment_method||''}</span><b>${t.amount} 🪙</b></div>`).join('');}
+</script>
+</body>
+</html>
