@@ -4,8 +4,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body{background:#0a0a0a;color:#fff;font-family:Arial;text-align:center;padding:15px;margin:0}
-h1{color:#FFD700}
-.board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px;margin:20px auto}
+h1{color:#FFD700}.board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px;margin:20px auto}
 .cell{background:#1a1a1a;border:2px solid #FFD700;border-radius:12px;height:100px;font-size:50px;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .cell.X{color:#FFD700}.cell.O{color:#25D366}
 button{background:#FFD700;color:#000;border:none;padding:13px 22px;border-radius:10px;font-weight:900;margin:5px;cursor:pointer}
@@ -18,74 +17,35 @@ input{padding:12px;border-radius:8px;border:2px solid #FFD700;background:#1a1a1a
 <h1>⭕❌ TIC TAC TOE ONLINE</h1>
 <input id="username" placeholder="Your username" value="Theo686">
 <div class="coin-box">🪙 Coins: <b id="coins">-</b> | Status: <b id="status">Not in game</b></div>
-<div>Bet: <select id="bet"><option value="50">50 Coins</option><option value="100" selected>100 Coins</option><option value="500">500 Coins</option></select></div>
-<br>
+<div>Bet: <select id="bet"><option value="50">50 Coins</option><option value="100" selected>100 Coins</option><option value="500">500 Coins</option></select></div><br>
 <button id="btnDuel">⚔️ FIND DUEL ONLINE</button>
 <button id="btnBot">🤖 PLAY KIZ BOT (55%)</button>
-<div id="msg" style="font-weight:700;margin:15px">Click BOT to play solo</div>
+<div id="msg" style="font-weight:700;margin:15px">Click BOT for solo, FIND DUEL for online</div>
 <div class="board" id="board">
 <div class="cell" data-i="0"></div><div class="cell" data-i="1"></div><div class="cell" data-i="2"></div>
 <div class="cell" data-i="3"></div><div class="cell" data-i="4"></div><div class="cell" data-i="5"></div>
 <div class="cell" data-i="6"></div><div class="cell" data-i="7"></div><div class="cell" data-i="8"></div>
 </div>
 <button onclick="location.reload()">🔄 Leave Game</button>
-<p style="font-size:12px;color:#aaa">V4.3 - Winner gets 90% - KIZ keeps 10% fee | KIZ BOT wins 55%</p>
+<p style="font-size:12px;color:#aaa">V4.4 - Winner gets 90% - KIZ keeps 10% fee | KIZ BOT wins 55% | 18+</p>
 <script>
-// --- BOT SOLO - NO SUPABASE NEEDED ---
-let board = ["","","","","","","","",""];
-let botGameOver = false;
-let botActive = false;
-let cells = document.querySelectorAll('#board .cell');
-function drawBot(){
-  cells.forEach((c,i)=>{ c.innerText = board[i] || ""; c.className = 'cell ' + (board[i]||""); });
-}
-function checkWin(b,p){
-  let w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  return w.some(c=>c.every(i=>b[i]==p));
-}
-function getBotMove(){
-  // win if can
-  for(let i=0;i<9;i++){ if(!board[i]){ board[i]="O"; if(checkWin(board,"O")){ board[i]=""; return i; } board[i]=""; } }
-  // block you
-  for(let i=0;i<9;i++){ if(!board[i]){ board[i]="X"; if(checkWin(board,"X")){ board[i]=""; return i; } board[i]=""; } }
-  if(!board[4]) return 4;
-  let corners=[0,2,6,8].filter(i=>!board[i]);
-  if(corners.length) return corners[Math.floor(Math.random()*corners.length)];
-  let empty=board.map((v,i)=>v==""?i:null).filter(v=>v!==null);
-  return empty[Math.floor(Math.random()*empty.length)];
-}
-function startBot(){
-  board=["","","","","","","","",""]; botGameOver=false; botActive=true;
-  document.getElementById('msg').innerText="Vs KIZ BOT - You are X - Tap a box!";
-  drawBot();
-}
-function playBotMove(i){
-  if(!botActive){ startBot(); }
-  if(botGameOver || board[i]) return;
-  board[i]="X"; drawBot();
-  if(checkWin(board,"X")){ botGameOver=true; document.getElementById('msg').innerText="🎉 YOU BEAT BOT! Tap BOT to play again"; return; }
-  if(!board.includes("")){ botGameOver=true; document.getElementById('msg').innerText="🤝 DRAW! Tap BOT to play again"; return; }
-  document.getElementById('msg').innerText="BOT thinking...";
-  setTimeout(()=>{
-    let pick=getBotMove();
-    if(pick!==undefined){ board[pick]="O"; drawBot(); }
-    if(checkWin(board,"O")){ botGameOver=true; document.getElementById('msg').innerText="😢 KIZ BOT WINS! Tap BOT to play again"; return; }
-    if(!board.includes("")){ botGameOver=true; document.getElementById('msg').innerText="🤝 DRAW! Tap BOT to play again"; return; }
-    document.getElementById('msg').innerText="Your turn - You are X";
-  },400);
-}
-cells.forEach(c=>{ c.addEventListener('click', ()=>{ playBotMove(parseInt(c.dataset.i)); }); });
-document.getElementById('btnBot').addEventListener('click', startBot);
-
-// --- ONLINE - SUPABASE ---
-let supabaseClient=null;
-try{ supabaseClient = window.supabase.createClient("https://cdnsysqzrrvysvwrydcx.supabase.co","sb_publishable_b4FSPZKzzMw22Ju-mipBAQ_dmwDCjU6"); }catch(e){}
-document.getElementById('btnDuel').addEventListener('click', async ()=>{
-  if(!supabaseClient){ alert("Supabase not loaded"); return; }
-  botActive=false;
-  document.getElementById('msg').innerText="Online coming - first fix BOT, then we fix online. Tables still needed.";
-  alert("Online needs tables in Supabase. For now BOT works offline. Tell me BOT works and I fix online next.");
-});
-drawBot();
+let sb=null; try{ sb=window.supabase.createClient("https://cdnsysqzrrvysvwrydcx.supabase.co","sb_publishable_b4FSPZKzzMw22Ju-mipBAQ_dmwDCjU6"); }catch(e){}
+let myId=localStorage.getItem('kiz_id')||crypto.randomUUID(); localStorage.setItem('kiz_id',myId);
+let board=["","","","","","","","",""], mode="bot", botOver=false, mySymbol="X", gameId=null, onlineOver=false;
+let cells=document.querySelectorAll('#board .cell');
+function draw(){ cells.forEach((c,i)=>{ c.innerText=board[i]||""; c.className='cell '+(board[i]||""); }); }
+function checkWin(b,p){ let w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; return w.some(c=>c.every(i=>b[i]==p)); }
+function botMove(){ for(let i=0;i<9;i++){ if(!board[i]){ board[i]="O"; if(checkWin(board,"O")){ board[i]=""; return i; } board[i]=""; } } for(let i=0;i<9;i++){ if(!board[i]){ board[i]="X"; if(checkWin(board,"X")){ board[i]=""; return i; } board[i]=""; } } if(!board[4]) return 4; let cor=[0,2,6,8].filter(i=>!board[i]); if(cor.length) return cor[Math.floor(Math.random()*cor.length)]; let e=board.map((v,i)=>v==""?i:null).filter(v=>v!==null); return e[Math.floor(Math.random()*e.length)]; }
+function startBot(){ mode="bot"; gameId=null; board=["","","","","","","","",""]; botOver=false; document.getElementById('status').innerText="BOT"; document.getElementById('msg').innerText="Vs KIZ BOT - You are X - Tap a box!"; draw(); }
+async function ensureProfile(){ let name=document.getElementById('username').value.trim()||"Player_"+myId.slice(0,4); let {data,error}=await sb.from('profiles').select('*').eq('id',myId).single(); if(error && error.code!=='PGRST116'){ alert("Supabase error: "+error.message+" - Run SQL in Supabase!"); throw error; } if(!data){ let ins=await sb.from('profiles').insert({id:myId,username:name,coins:1000}); if(ins.error){ alert(ins.error.message); throw ins.error; } data={coins:1000}; } document.getElementById('coins').innerText=data.coins; return data; }
+async function findDuel(){ try{ mode="online"; let p=await ensureProfile(); let name=document.getElementById('username').value.trim()||"Player"; let bet=parseInt(document.getElementById('bet').value); if(p.coins<bet){ alert("Not enough coins!"); return; } document.getElementById('msg').innerText="🔎 Looking for opponent..."; let {data:waiting}=await sb.from('games').select('*').eq('status','waiting').neq('player_x',myId).order('created_at').limit(1).maybeSingle(); if(waiting){ gameId=waiting.id; mySymbol="O"; await sb.from('games').update({player_o:myId,player_o_name:name,status:'playing'}).eq('id',gameId); await sb.from('profiles').update({coins:p.coins-bet}).eq('id',myId); document.getElementById('msg').innerText="⚔️ Duel found! You are O"; subscribe(); } else { let {data:g,error}=await sb.from('games').insert({player_x:myId,player_x_name:name,bet:bet,status:'waiting'}).select().single(); if(error){ alert(error.message); return; } gameId=g.id; mySymbol="X"; await sb.from('profiles').update({coins:p.coins-bet}).eq('id',myId); document.getElementById('msg').innerText="⏳ Waiting... BOT joins in 30s if no one comes"; subscribe(); setTimeout(async()=>{ let {data:cur}=await sb.from('games').select('*').eq('id',gameId).single(); if(cur && cur.status=='waiting'){ await sb.from('games').update({player_o:'00000000-0000-0000-0000-000000000000',player_o_name:'KIZ BOT',status:'playing'}).eq('id',gameId); document.getElementById('msg').innerText="🤖 KIZ BOT joined! You are X"; } },30000); } }catch(e){ console.log(e); } }
+function subscribe(){ sb.channel('game-'+gameId).on('postgres_changes',{event:'UPDATE',schema:'public',table:'games',filter:'id=eq.'+gameId}, pl=>renderGame(pl.new)).subscribe(); }
+function renderGame(g){ board=g.board; onlineOver=g.status=='finished'; document.getElementById('status').innerText=g.status; if(g.status=='finished'){ if(g.winner=='DRAW') document.getElementById('msg').innerText="🤝 Draw! Bet returned"; else if(g.winner==mySymbol) document.getElementById('msg').innerText="🏆 YOU WIN! + coins"; else document.getElementById('msg').innerText="😢 You lost."; ensureProfile(); } else document.getElementById('msg').innerText="Turn: "+g.turn+" - You are "+mySymbol; draw(); }
+async function finishOnline(g,winner){ let bet=g.bet, fee=Math.floor(bet*2*0.10), prize=bet*2-fee; await sb.from('games').update({board:board,status:'finished',winner:winner,fee:fee}).eq('id',gameId); if(winner!="DRAW"){ let wid=winner=='X'?g.player_x:g.player_o; if(wid && wid!='00000000-0000-0000-0000-000000000000'){ let {data:wp}=await sb.from('profiles').select('*').eq('id',wid).single(); if(wp) await sb.from('profiles').update({coins:wp.coins+prize}).eq('id',wid); } } else { for(let pid of [g.player_x,g.player_o]){ let {data:pp}=await sb.from('profiles').select('*').eq('id',pid).single(); if(pp) await sb.from('profiles').update({coins:pp.coins+bet}).eq('id',pid); } } }
+async function playCell(i){ if(mode=="bot"){ if(botOver||board[i]) return; board[i]="X"; draw(); if(checkWin(board,"X")){ botOver=true; document.getElementById('msg').innerText="🎉 You beat BOT!"; return; } if(!board.includes("")){ botOver=true; document.getElementById('msg').innerText="🤝 DRAW!"; return; } document.getElementById('msg').innerText="BOT thinking..."; setTimeout(()=>{ let pick=botMove(); if(pick!==undefined){ board[pick]="O"; draw(); } if(checkWin(board,"O")){ botOver=true; document.getElementById('msg').innerText="😢 KIZ BOT wins!"; return; } if(!board.includes("")){ botOver=true; document.getElementById('msg').innerText="🤝 DRAW!"; return; } document.getElementById('msg').innerText="Your turn - You are X"; },400); return; } if(!gameId||onlineOver) return; let {data:g}=await sb.from('games').select('*').eq('id',gameId).single(); if(g.status!='playing'||g.turn!=mySymbol) return; board=g.board; if(board[i]) return; board[i]=mySymbol; let winner=null; if(checkWin(board,mySymbol)) winner=mySymbol; else if(!board.includes("")) winner="DRAW"; if(winner){ await finishOnline(g,winner); } else await sb.from('games').update({board:board,turn:mySymbol=='X'?'O':'X'}).eq('id',gameId); if(g.player_o=='00000000-0000-0000-0000-000000000000' && !winner){ setTimeout(async()=>{ let {data:g2}=await sb.from('games').select('*').eq('id',gameId).single(); if(g2.status!='playing') return; board=g2.board; let pick=botMove(); board[pick]="O"; let w2=null; if(checkWin(board,"O")) w2="O"; else if(!board.includes("")) w2="DRAW"; if(w2) await finishOnline(g2,w2); else await sb.from('games').update({board:board,turn:'X'}).eq('id',gameId); },700); } }
+cells.forEach(c=>c.addEventListener('click',()=>playCell(parseInt(c.dataset.i))));
+document.getElementById('btnBot').addEventListener('click',startBot);
+document.getElementById('btnDuel').addEventListener('click',findDuel);
+draw();
 </script>
 </body></html>
