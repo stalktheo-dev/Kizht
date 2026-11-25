@@ -6,7 +6,7 @@
 body{background:#0a0a0a;color:#fff;font-family:Arial;text-align:center;padding:15px;margin:0}
 h1{color:#FFD700}
 .board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px;margin:20px auto}
-.cell{background:#1a1a1a;border:2px solid #FFD700;border-radius:12px;height:100px;font-size:50px;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cell{background:#1a1a1a;border:2px solid #FFD700;border-radius:12px;height:100px;font-size:50px;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer;min-height:100px}
 .cell.X{color:#FFD700}.cell.O{color:#25D366}
 button{background:#FFD700;color:#000;border:none;padding:13px 22px;border-radius:10px;font-weight:900;margin:5px;cursor:pointer}
 select{padding:10px;background:#1a1a1a;color:#fff;border:2px solid #FFD700;border-radius:8px}
@@ -18,47 +18,34 @@ input{padding:12px;border-radius:8px;border:2px solid #FFD700;background:#1a1a1a
 <h1>⭕❌ TIC TAC TOE ONLINE</h1>
 <input id="username" placeholder="Your username" value="Theo686">
 <div class="coin-box">🪙 Coins: <b id="coins">-</b> | Status: <b id="status">Not in game</b></div>
-<div>Bet: <select id="bet"><option value="50">50 Coins</option><option value="100">100 Coins</option><option value="500" selected>500 Coins</option></select></div>
+<div>Bet: <select id="bet"><option value="50">50 Coins</option><option value="100" selected>100 Coins</option><option value="500">500 Coins</option></select></div>
 <br>
 <button onclick="findDuel()">⚔️ FIND DUEL ONLINE</button>
 <button onclick="playBot()">🤖 PLAY KIZ BOT (55%)</button>
 <div id="msg" style="font-weight:700;margin:15px">Click BOT to play solo, or FIND DUEL for online</div>
-<div class="board" id="board"></div>
+<div class="board" id="board">
+<div class="cell" onclick="play(0)"></div><div class="cell" onclick="play(1)"></div><div class="cell" onclick="play(2)"></div>
+<div class="cell" onclick="play(3)"></div><div class="cell" onclick="play(4)"></div><div class="cell" onclick="play(5)"></div>
+<div class="cell" onclick="play(6)"></div><div class="cell" onclick="play(7)"></div><div class="cell" onclick="play(8)"></div>
+</div>
 <button onclick="location.reload()">🔄 Leave Game</button>
-<p style="font-size:12px;color:#aaa">Winner gets 90% - KIZ keeps 10% fee | KIZ BOT wins 55% | 18+ | Joue avec modération</p>
+<p style="font-size:12px;color:#aaa">V4.2 - Winner gets 90% - KIZ keeps 10% fee | KIZ BOT wins 55% | 18+ | Joue avec modération</p>
 <script>
-const SUPABASE_URL = "https://cdnsysqzrrvysvwrydcx.supabase.co";
-const SUPABASE_ANON = "sb_publishable_b4FSPZKzzMw22Ju-mipBAQ_dmwDCjU6";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-let myId = localStorage.getItem('kiz_id') || crypto.randomUUID();
-localStorage.setItem('kiz_id', myId);
-let myName="", mySymbol="X", gameId=null, board=["","","","","","","","",""], gameOver=false, mode="online";
-async function ensureProfile(){
-  myName = document.getElementById('username').value.trim() || "Player_"+myId.slice(0,4);
-  let {data, error} = await supabase.from('profiles').select('*').eq('id', myId).single();
-  if(error && error.code!=='PGRST116'){ alert("Supabase error: "+error.message+" - Did you run SQL tables?"); throw error; }
-  if(!data){ let ins = await supabase.from('profiles').insert({id:myId, username:myName, coins:1000}); if(ins.error){ alert("Cannot create profile: "+ins.error.message); throw ins.error; } data={coins:1000}; }
-  document.getElementById('coins').innerText = data.coins;
-  return data;
-}
-async function findDuel(){
-  try{
-    mode="online"; let p=await ensureProfile(); let bet=parseInt(document.getElementById('bet').value);
-    if(p.coins<bet){ alert("Not enough coins!"); return; }
-    document.getElementById('msg').innerText="🔎 Looking for opponent...";
-    let {data:waiting} = await supabase.from('games').select('*').eq('status','waiting').neq('player_x', myId).order('created_at').limit(1).maybeSingle();
-    if(waiting){ gameId=waiting.id; mySymbol="O"; await supabase.from('games').update({player_o:myId, player_o_name:myName, status:'playing'}).eq('id', gameId); await supabase.from('profiles').update({coins:p.coins-bet}).eq('id', myId); document.getElementById('msg').innerText="⚔️ Duel found! You are O"; subscribe(); }
-    else { let {data:g, error} = await supabase.from('games').insert({player_x:myId, player_x_name:myName, bet:bet, status:'waiting'}).select().single(); if(error){ alert(error.message); return; } gameId=g.id; mySymbol="X"; await supabase.from('profiles').update({coins:p.coins-bet}).eq('id', myId); document.getElementById('msg').innerText="⏳ Waiting... BOT joins in 30s if no one comes"; subscribe(); setTimeout(async()=>{ let {data:cur}=await supabase.from('games').select('*').eq('id', gameId).single(); if(cur && cur.status=='waiting'){ await supabase.from('games').update({player_o:'00000000-0000-0000-0000-000000000000', player_o_name:'KIZ BOT', status:'playing'}).eq('id', gameId); document.getElementById('msg').innerText="🤖 KIZ BOT joined! You are X"; } },30000); }
-  }catch(e){ console.log(e); }
-}
-async function playBot(){ mode="bot"; gameId=null; board=["","","","","","","","",""]; gameOver=false; mySymbol="X"; document.getElementById('msg').innerText="Vs KIZ BOT - You are X"; draw(); }
+let supabaseClient=null;
+try{ supabaseClient = window.supabase.createClient("https://cdnsysqzrrvysvwrydcx.supabase.co","sb_publishable_b4FSPZKzzMw22Ju-mipBAQ_dmwDCjU6"); }catch(e){ document.getElementById('msg').innerText="Supabase failed to load, BOT still works"; }
+const supabase = supabaseClient;
+let myId = localStorage.getItem('kiz_id') || crypto.randomUUID(); localStorage.setItem('kiz_id', myId);
+let myName="", mySymbol="X", gameId=null, board=["","","","","","","","",""], gameOver=false, mode="bot";
+async function ensureProfile(){ myName=document.getElementById('username').value.trim()||"Player_"+myId.slice(0,4); let {data,error}=await supabase.from('profiles').select('*').eq('id',myId).single(); if(error && error.code!=='PGRST116'){ alert("Supabase error: "+error.message+" - Run SQL tables!"); throw error; } if(!data){ let ins=await supabase.from('profiles').insert({id:myId,username:myName,coins:1000}); if(ins.error){ alert("Cannot create profile: "+ins.error.message); throw ins.error; } data={coins:1000}; } document.getElementById('coins').innerText=data.coins; return data; }
+async function findDuel(){ try{ mode="online"; let p=await ensureProfile(); let bet=parseInt(document.getElementById('bet').value); if(p.coins<bet){ alert("Not enough coins!"); return; } document.getElementById('msg').innerText="🔎 Looking for opponent..."; let {data:waiting}=await supabase.from('games').select('*').eq('status','waiting').neq('player_x',myId).order('created_at').limit(1).maybeSingle(); if(waiting){ gameId=waiting.id; mySymbol="O"; await supabase.from('games').update({player_o:myId,player_o_name:myName,status:'playing'}).eq('id',gameId); await supabase.from('profiles').update({coins:p.coins-bet}).eq('id',myId); document.getElementById('msg').innerText="⚔️ Duel found! You are O"; subscribe(); } else { let {data:g,error}=await supabase.from('games').insert({player_x:myId,player_x_name:myName,bet:bet,status:'waiting'}).select().single(); if(error){ alert(error.message); return; } gameId=g.id; mySymbol="X"; await supabase.from('profiles').update({coins:p.coins-bet}).eq('id',myId); document.getElementById('msg').innerText="⏳ Waiting... BOT joins in 30s"; subscribe(); setTimeout(async()=>{ let {data:cur}=await supabase.from('games').select('*').eq('id',gameId).single(); if(cur && cur.status=='waiting'){ await supabase.from('games').update({player_o:'00000000-0000-0000-0000-000000000000',player_o_name:'KIZ BOT',status:'playing'}).eq('id',gameId); document.getElementById('msg').innerText="🤖 KIZ BOT joined! You are X"; } },30000); } }catch(e){ console.log(e); } }
+function playBot(){ mode="bot"; gameId=null; board=["","","","","","","","",""]; gameOver=false; mySymbol="X"; document.getElementById('msg').innerText="Vs KIZ BOT - You are X - Your turn"; draw(); }
 function subscribe(){ supabase.channel('game-'+gameId).on('postgres_changes',{event:'UPDATE',schema:'public',table:'games',filter:'id=eq.'+gameId}, payload=>{ renderGame(payload.new); }).subscribe(); draw(); }
-function renderGame(g){ board=g.board; gameOver=g.status=='finished'; document.getElementById('status').innerText=g.status; if(g.status=='finished'){ if(g.winner=='DRAW') document.getElementById('msg').innerText="🤝 Draw! Bet returned"; else if(g.winner==mySymbol) document.getElementById('msg').innerText="🏆 YOU WIN!"; else document.getElementById('msg').innerText="😢 You lost."; ensureProfile(); } else { document.getElementById('msg').innerText="Turn: "+g.turn+" - You are "+mySymbol; } draw(); }
-function draw(){ let el=document.getElementById('board'); el.innerHTML=""; board.forEach((v,i)=>{ let d=document.createElement('div'); d.className='cell '+v; d.innerText=v; d.onclick=()=>play(i); el.appendChild(d); }); }
+function renderGame(g){ board=g.board; gameOver=g.status=='finished'; document.getElementById('status').innerText=g.status; if(g.status=='finished'){ if(g.winner=='DRAW') document.getElementById('msg').innerText="🤝 Draw!"; else if(g.winner==mySymbol) document.getElementById('msg').innerText="🏆 YOU WIN!"; else document.getElementById('msg').innerText="😢 You lost."; ensureProfile(); } else { document.getElementById('msg').innerText="Turn: "+g.turn+" - You are "+mySymbol; } draw(); }
+function draw(){ let cells=document.querySelectorAll('#board .cell'); cells.forEach((c,i)=>{ c.innerText=board[i]||""; c.className='cell '+(board[i]||""); }); }
 function checkWin(b,p){ let w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; return w.some(c=>c.every(i=>b[i]==p)); }
-async function play(i){ if(gameOver||board[i]) return; if(mode=="bot"){ board[i]="X"; draw(); if(checkWin(board,"X")){ gameOver=true; document.getElementById('msg').innerText="🎉 You beat BOT!"; return; } if(!board.includes("")){ gameOver=true; document.getElementById('msg').innerText="🤝 DRAW!"; return; } let pick=getBotMove(); board[pick]="O"; draw(); if(checkWin(board,"O")){ gameOver=true; document.getElementById('msg').innerText="😢 KIZ BOT wins!"; return; } return; } if(!gameId) return; let {data:g}=await supabase.from('games').select('*').eq('id', gameId).single(); if(g.status!='playing'||g.turn!=mySymbol) return; board=g.board; board[i]=mySymbol; let winner=null; if(checkWin(board,mySymbol)) winner=mySymbol; else if(!board.includes("")) winner="DRAW"; if(winner){ await finishGame(g,winner); } else await supabase.from('games').update({board:board, turn:mySymbol=='X'?'O':'X'}).eq('id', gameId); if(g.player_o=='00000000-0000-0000-0000-000000000000' && !winner){ setTimeout(async()=>{ let {data:g2}=await supabase.from('games').select('*').eq('id', gameId).single(); if(g2.status!='playing') return; board=g2.board; let pick=getBotMove(); board[pick]="O"; let w2=null; if(checkWin(board,"O")) w2="O"; else if(!board.includes("")) w2="DRAW"; if(w2) await finishGame(g2,w2); else await supabase.from('games').update({board:board, turn:'X'}).eq('id', gameId); },700); } }
+async function play(i){ if(gameOver||board[i]) return; if(mode=="bot"||!gameId){ if(mode!="bot") playBot(); board[i]="X"; draw(); if(checkWin(board,"X")){ gameOver=true; document.getElementById('msg').innerText="🎉 You beat BOT! Click BOT to play again"; return; } if(!board.includes("")){ gameOver=true; document.getElementById('msg').innerText="🤝 DRAW! Click BOT again"; return; } let pick=getBotMove(); if(pick!==undefined){ board[pick]="O"; draw(); if(checkWin(board,"O")){ gameOver=true; document.getElementById('msg').innerText="😢 KIZ BOT wins! Click BOT again"; return; } } return; } let {data:g}=await supabase.from('games').select('*').eq('id',gameId).single(); if(g.status!='playing'||g.turn!=mySymbol) return; board=g.board; board[i]=mySymbol; let winner=null; if(checkWin(board,mySymbol)) winner=mySymbol; else if(!board.includes("")) winner="DRAW"; if(winner){ await finishGame(g,winner); } else await supabase.from('games').update({board:board,turn:mySymbol=='X'?'O':'X'}).eq('id',gameId); if(g.player_o=='00000000-0000-0000-0000-000000000000' && !winner){ setTimeout(async()=>{ let {data:g2}=await supabase.from('games').select('*').eq('id',gameId).single(); if(g2.status!='playing') return; board=g2.board; let pick=getBotMove(); board[pick]="O"; let w2=null; if(checkWin(board,"O")) w2="O"; else if(!board.includes("")) w2="DRAW"; if(w2) await finishGame(g2,w2); else await supabase.from('games').update({board:board,turn:'X'}).eq('id',gameId); },700); } }
 function getBotMove(){ for(let i=0;i<9;i++){ if(!board[i]){ board[i]="O"; if(checkWin(board,"O")){ board[i]=""; return i; } board[i]=""; } } for(let i=0;i<9;i++){ if(!board[i]){ board[i]="X"; if(checkWin(board,"X")){ board[i]=""; return i; } board[i]=""; } } if(!board[4]) return 4; let corners=[0,2,6,8].filter(i=>!board[i]); if(corners.length) return corners[Math.floor(Math.random()*corners.length)]; let empty=board.map((v,i)=>v==""?i:null).filter(v=>v!==null); return empty[Math.floor(Math.random()*empty.length)]; }
-async function finishGame(g,winner){ let bet=g.bet, fee=Math.floor(bet*2*0.10), prize=bet*2-fee; await supabase.from('games').update({board:board, status:'finished', winner:winner, fee:fee}).eq('id', gameId); if(winner!="DRAW"){ let winnerId=winner=='X'?g.player_x:g.player_o; if(winnerId && winnerId!='00000000-0000-0000-0000-000000000000'){ let {data:wp}=await supabase.from('profiles').select('*').eq('id', winnerId).single(); if(wp) await supabase.from('profiles').update({coins:wp.coins+prize}).eq('id', winnerId); } } else { for(let pid of [g.player_x,g.player_o]){ let {data:pp}=await supabase.from('profiles').select('*').eq('id', pid).single(); if(pp) await supabase.from('profiles').update({coins:pp.coins+bet}).eq('id', pid); } } }
+async function finishGame(g,winner){ let bet=g.bet, fee=Math.floor(bet*2*0.10), prize=bet*2-fee; await supabase.from('games').update({board:board,status:'finished',winner:winner,fee:fee}).eq('id',gameId); if(winner!="DRAW"){ let winnerId=winner=='X'?g.player_x:g.player_o; if(winnerId && winnerId!='00000000-0000-0000-0000-000000000000'){ let {data:wp}=await supabase.from('profiles').select('*').eq('id',winnerId).single(); if(wp) await supabase.from('profiles').update({coins:wp.coins+prize}).eq('id',winnerId); } } else { for(let pid of [g.player_x,g.player_o]){ let {data:pp}=await supabase.from('profiles').select('*').eq('id',pid).single(); if(pp) await supabase.from('profiles').update({coins:pp.coins+bet}).eq('id',pid); } } }
 draw();
 </script>
 </body></html>
