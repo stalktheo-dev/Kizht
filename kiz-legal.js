@@ -65,7 +65,7 @@ const DOCS = {
     <h4>7. Disponibilité et erreurs</h4>
     <p>L’application peut être interrompue pour maintenance ou à cause d’un incident technique. Si une partie est faussée par une erreur technique, l’équipe peut corriger les soldes ou rembourser les mises.</p>
     <h4>8. Jouer avec modération</h4>
-    <p>Ne joue que l’argent que tu peux te permettre de perdre. Voir la rubrique « Jouer responsable ».</p>
+    <p>Ne joue que l’argent que tu peux te permettre de perdre.</p>
     <h4>9. Modifications</h4>
     <p>Ces conditions peuvent évoluer. La version en vigueur est celle affichée dans l’application. Pour toute question, utilise Contact / Support joueur.</p>`],
   legal: ["Mentions légales", `
@@ -127,7 +127,7 @@ foot.innerHTML = `
     <button data-doc="terms">Conditions d’utilisation</button>
     <button data-doc="contact">Contact / Support joueur</button>
   </nav>
-  <div class="rg">🔞 Réservé aux 18 ans et plus. Joue avec modération. <button data-doc="safe">Jouer responsable</button></div>`;
+  <div class="rg">🔞 Réservé aux 18 ans et plus. Joue avec modération.</div>`;
 document.querySelector(".container").insertAdjacentElement("afterend", foot);
 
 /* ---------- Case 18+ à l’inscription ---------- */
