@@ -12,7 +12,7 @@ st.textContent = `
 .ka-show{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mute,#9AA3D2);cursor:pointer}
 #kaShow{width:20px;height:20px;margin:0;padding:0;accent-color:#FFC53D}
 #kaForgot{background:none;border:0;color:var(--gold,#FFC53D);font-weight:700;font-size:13px;text-align:left;text-decoration:underline;cursor:pointer;padding:0}
-#kaForgot.hidden{display:none}
+#kaForgot.hidden,#klAgeBox.hidden{display:none!important}
 `;
 document.head.appendChild(st);
 
@@ -77,7 +77,13 @@ handleAuth = function(){
     if (pw.length < 6) return bad("Mot de passe trop court : 6 caractères minimum.");
     if (pw !== p2.value) return bad("Les deux mots de passe ne sont pas identiques.");
   }
-  return _handleAuth();
+  /* Le code d’origine exige un numéro même à la connexion (il ne l’utilise pas) :
+     on met un 0 le temps de la vérification, puis on le retire. */
+  const ph = $("phone"), empty = isLogin && !ph.value.trim();
+  if (empty) ph.value = "0";
+  const result = _handleAuth();
+  if (empty) ph.value = "";
+  return result;
 };
 
 /* Déconnexion : on vide les mots de passe et on revient sur Connexion */
